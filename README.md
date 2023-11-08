@@ -1,1 +1,1 @@
-# OSProject# ProiectSO
+# ProiectSO
