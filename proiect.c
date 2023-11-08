@@ -37,7 +37,9 @@ int main(int argc, char *argv[])
     printf("%s\n%s\n", argv[0], argv[1]);
 
     int fIn, fOut; //descriptor fisier
-    int rd, offset;
+    int rd;
+    off_t offset;
+    __uint8_t buffer[BUFFSIZE], buffer2[50];
 
     if((fIn=open(argv[1], O_RDONLY)) < 0)
     {
@@ -45,64 +47,91 @@ int main(int argc, char *argv[])
         exit(4);
     }
 
-    if((fOut=open("statistica.txt", O_WRONLY | O_TRUNC | O_CREAT, S_IWUSR)) < 0)
+    if((fOut=open("statistica.txt", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR)) < 0)
     {
         perror("Nu s-a putut deschide fisierul de scriere!");
         exit(5);
     }
 
     offset = lseek(fIn, 2, SEEK_SET);
-    printf("%d\n", offset);
-    fIn+=offset;
+    printf("%ld\n", offset);
 
-    /*int fIn, fOut, rd;
-    struct stat var;
-    int count = 0;
-    char buffer[BUFFSIZE], buff2[BUFFSIZE], buff3[BUFFSIZE];
-    if((fIn=open(argv[1], O_RDONLY)) < 0)
+    if(read(fIn, buffer, BUFFSIZE) != -1)
     {
-        perror("Eroare!");
-        exit(6);
-    }
-    if((fOut=open(argv[2], O_WRONLY | O_TRUNC | O_CREAT, S_IWUSR)) < 0)
-    {
-        perror("Eroare!");
-        exit(7);
-    }
-    while((rd=read(fIn, buffer, BUFFSIZE)) != 0)
-    {
-       // sprintf(buffer, "%s", buff2);
-        for(int i = 0; i < rd; i++)
+        //sprintf(buffer2, "FileSize: %u\n", buffer);
+        //stat(argv[1], &arg); sprintf(buffer2, "FileSize: %ld bytes\n", arg.st_size);
+
+        sprintf(buffer2, "FileSize: %u bytes\n", (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24)));
+        if(write(fOut, buffer2, strlen(buffer2)) < 0)
         {
-            if(isalnum(buffer[i]))
-            {
-                count++;
-            }
+            perror("Nu s-a putut efectua scrierea!");
+            exit(6);
         }
     }
-    sprintf(buff2, "count: %d\n", count);
-    //sprintf(st_uid, "ID: %d", ); var.st_uid
-
-    if(write(fOut, buff2, strlen(buff2)) < 0)
-    {
-        perror("Nu s-a putut efectua scrierea!");
-        exit(8);
+    else {
+        perror("Eroare la citire!");
+        exit(7);
     }
 
-    if (fstat(fIn, &var))
-    {
-        perror("Bad call");
-        exit(9);
-    }
-    else sprintf(buff3, "User ID : %d", var.st_uid);
+    offset = lseek(fIn, 12, SEEK_CUR);
+    printf("%ld\n", offset);
 
-    if(write(fOut, buff3, strlen(buff3)) < 0)
+    if(read(fIn, buffer, BUFFSIZE) != -1)
     {
-        perror("Nu s-a putut efectua scrierea!");
-        exit(8);
+        //sprintf(buffer2, "FileSize: %u\n", buffer);
+        //stat(argv[1], &arg); sprintf(buffer2, "FileSize: %ld bytes\n", arg.st_size);
+
+        sprintf(buffer2, "Width: %u px\n", (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24)));
+        if(write(fOut, buffer2, strlen(buffer2)) < 0)
+        {
+            perror("Nu s-a putut efectua scrierea!");
+            exit(6);
+        }
     }
+    else {
+        perror("Eroare la citire!");
+        exit(7);
+    }    
+
+    if(read(fIn, buffer, BUFFSIZE) != -1)
+    {
+        //sprintf(buffer2, "FileSize: %u\n", buffer);
+        //stat(argv[1], &arg); sprintf(buffer2, "FileSize: %ld bytes\n", arg.st_size);
+
+        sprintf(buffer2, "Height: %u px\n", (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24)));
+        if(write(fOut, buffer2, strlen(buffer2)) < 0)
+        {
+            perror("Nu s-a putut efectua scrierea!");
+            exit(6);
+        }
+    }
+    else {
+        perror("Eroare la citire!");
+        exit(7);
+    } 
+
+    offset = lseek(fIn, 8, SEEK_CUR);
+    printf("%ld\n", offset);
+
+    if(read(fIn, buffer, BUFFSIZE) != -1)
+    {
+        //sprintf(buffer2, "FileSize: %u\n", buffer);
+        //stat(argv[1], &arg); sprintf(buffer2, "FileSize: %ld bytes\n", arg.st_size);
+
+        sprintf(buffer2, "ImageSize: %u bytes\n", (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24)));
+        if(write(fOut, buffer2, strlen(buffer2)) < 0)
+        {
+            perror("Nu s-a putut efectua scrierea!");
+            exit(6);
+        }
+    }
+    else {
+        perror("Eroare la citire!");
+        exit(7);
+    } 
+
     close(fIn);
-    close(fOut);*/
+    close(fOut);
     
     return 0;
 }

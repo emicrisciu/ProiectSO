@@ -1,0 +1,4 @@
+FileSize: 7372938 bytes
+Width: 1920 px
+Height: 1280 px
+ImageSize: 7372800 bytes
