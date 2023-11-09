@@ -1,8 +1,8 @@
-FileName: img.bmp
-FileSize: 7372938 bytes
+File Name: img.bmp
+File Size: 7372938 bytes
 Width: 1920 px
 Height: 1280 px
-ImageSize: 7372800 bytes
+Image Size: 7372800 bytes
 User ID: 1000
 Time Of Last Modification: Wed Nov  8 17:52:10 2023
 Links Count: 1

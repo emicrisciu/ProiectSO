@@ -58,10 +58,10 @@ void openFiles(int *fIn, int *fOut, char* argv[])
 
 //this functions writes inside the output file the name of the input file
 //I created a separate function because this information is not contained within the .bmp file header
-void writeFileName(char *argv[], __uint8_t buffer2[], int *fOut)
+void writeFileNameToOutput(char *argv[], __uint8_t buffer2[], int *fOut)
 {
     //here I take the file's name directly from the argument since everyhing's already checked
-    sprintf(buffer2, "FileName: %s\n", argv[1]);
+    sprintf(buffer2, "File Name: %s\n", argv[1]);
     if(write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
@@ -78,7 +78,7 @@ void readFromBMPHeaderWriteInfoToOutput(off_t offset, int *fIn, int *fOut, __uin
 
     if(read(*fIn, buffer, BUFFSIZE) != -1)
     {
-        sprintf(buffer2, "FileSize: %u bytes\n", (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24)));
+        sprintf(buffer2, "File Size: %u bytes\n", (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24)));
         if(write(*fOut, buffer2, strlen(buffer2)) < 0)
         {
             perror("Could not write!");
@@ -124,7 +124,7 @@ void readFromBMPHeaderWriteInfoToOutput(off_t offset, int *fIn, int *fOut, __uin
 
     if(read(*fIn, buffer, BUFFSIZE) != -1)
     {
-        sprintf(buffer2, "ImageSize: %u bytes\n", (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24)));
+        sprintf(buffer2, "Image Size: %u bytes\n", (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24)));
         if(write(*fOut, buffer2, strlen(buffer2)) < 0)
         {
             perror("Could not write!");
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
 
     openFiles(&fIn, &fOut, argv);
 
-    writeFileName(argv, buffer2, &fOut);
+    writeFileNameToOutput(argv, buffer2, &fOut);
 
     readFromBMPHeaderWriteInfoToOutput(offset, &fIn, &fOut, buffer, buffer2);
 
