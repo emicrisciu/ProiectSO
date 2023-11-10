@@ -1,10 +1,10 @@
-File Name: img.bmp
+File Name: emi/img.bmp
 File Size: 7372938 bytes
 Width: 1920 px
 Height: 1280 px
 Image Size: 7372800 bytes
 User ID: 1000
-Time Of Last Modification: Wed Nov  8 17:52:10 2023
+Time Of Last Modification: Fri Nov 10 12:29:49 2023
 Links Count: 1
 User Rights: RW-
 Group Rights: RW-
