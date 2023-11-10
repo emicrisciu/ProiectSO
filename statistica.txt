@@ -1,3 +1,15 @@
+Directory name: .
+User ID: 1000
+User Rights: RWX
+Group Rights: RWX
+Others Rights: R-X
+
+Directory name: ..
+User ID: 1000
+User Rights: RWX
+Group Rights: RWX
+Others Rights: R-X
+
 File Name: emi/img.bmp
 File Size: 7372938 bytes
 Width: 1920 px
@@ -9,3 +21,19 @@ Links Count: 1
 User Rights: RW-
 Group Rights: RW-
 Others Rights: R--
+
+Directory name: emiemi
+User ID: 1000
+User Rights: RWX
+Group Rights: RWX
+Others Rights: R-X
+
+File Name: emi/poli.txt
+File Size: 33 bytes
+User ID: 1000
+Time Of Last Modification: Fri Nov 10 15:04:13 2023
+Links Count: 1
+User Rights: RW-
+Group Rights: RW-
+Others Rights: R--
+
