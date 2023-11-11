@@ -4,6 +4,13 @@ User Rights: RWX
 Group Rights: RWX
 Others Rights: R-X
 
+File Name: emi/poliShortcut
+Symbolic Link Size: 8 bytes
+Target File Size: 33 bytes
+User Rights: RWX
+Group Rights: RWX
+Others Rights: RWX
+
 Directory name: ..
 User ID: 1000
 User Rights: RWX

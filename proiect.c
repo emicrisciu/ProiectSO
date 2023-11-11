@@ -239,8 +239,16 @@ void writeInfoToOutputUsingStatInfo(char *argv[], struct stat arg, __uint8_t buf
 //this function closes the files I worked with
 void closeFiles(int *fIn, int *fOut)
 {
-    close(*fIn);
-    close(*fOut);
+    if((close(*fIn)) < 0)
+    {
+        perror("Could not close the file!");
+        exit(14);
+    }
+    if((close(*fOut)) < 0)
+    {
+        perror("Could not close the file!");
+        exit(14);
+    }
     printf("Program ended successfully! Every information is now written in statistica.txt!\n");
 }
 
