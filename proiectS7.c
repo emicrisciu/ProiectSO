@@ -408,7 +408,6 @@ int main(int argc, char *argv[])
         strcpy(filename, dirInput->d_name);
         strcat(path, "/");
         strcat(path, filename);
-        //printf("CALEA: %s\n", path);
 
         //getting information about each entry
         if((lstat(path, &arg)) < 0)
