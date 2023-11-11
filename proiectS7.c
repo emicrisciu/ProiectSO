@@ -11,7 +11,7 @@
 #include <dirent.h>
 
 #define BUFFSIZE 4
-#define STR_SIZE 50
+#define STR_SIZE 280
 
 //initialization function: building the error message and checking the correctness of the argument
 void initialize(int argc, char *argv[], struct stat arg)
@@ -40,6 +40,18 @@ void initialize(int argc, char *argv[], struct stat arg)
     }
 }
 
+//this function opens the directory given as argument to my program
+void openDirectory(char *argv[], DIR **dir)
+{
+    *dir = opendir(argv[1]);
+    
+    if(*dir==NULL)
+    {
+        perror("Error when opening directory!");
+        exit(10);
+    }
+}
+
 /*every function which works with the file descriptors fIn and fOut will have their adresses passed so I can work with
   them through all my code*/
 
@@ -63,7 +75,7 @@ void openOutputFile(int *fOut)
     }
 }
 
-//this functions writes inside the output file the name of the input file
+//this function writes inside the output file the name of the input file
 //I created a separate function because this information is not contained within the .bmp file header
 void writeFileNameToOutput(char *path, __uint8_t buffer2[], int *fOut)
 {
@@ -278,30 +290,222 @@ void writeFileSizeToOutputUsingStat(char *path, struct stat arg, char buffer2[],
     }
 }
 
+void writeSymLinkInfoToOutput(char path[], __uint8_t buffer2[], int *fOut, struct stat arg, struct dirent *dirInput)
+{
+    struct stat target;
+                if((stat(path, &target)) < 0)
+                {
+                    perror("Bad call");
+                    exit(11);
+                }
+
+                sprintf(buffer2, "Symbolic Link Name: %s\n", dirInput->d_name);
+                if(write(*fOut, buffer2, strlen(buffer2)) < 0)
+                {
+                    perror("Could not write!");
+                    exit(6);
+                }
+                
+                sprintf(buffer2, "Symbolic Link Size: %lu bytes\n", arg.st_size);
+                if(write(*fOut, buffer2, strlen(buffer2)) < 0)
+                {
+                    perror("Could not write!");
+                    exit(6);
+                }
+                sprintf(buffer2, "Target File Size: %lu bytes\n", target.st_size);
+                if(write(*fOut, buffer2, strlen(buffer2)) < 0)
+                {
+                    perror("Could not write!");
+                    exit(6);
+                }
+                    mode_t rights = arg.st_mode;
+                    char bufferRights[3] = "";
+
+                    //building output for user rights
+                    if(rights & S_IRUSR) strcat(bufferRights, "R");
+                    else strcat(bufferRights, "-");
+
+                    if(rights & S_IWUSR) strcat(bufferRights, "W");
+                    else strcat(bufferRights, "-");
+
+                    if(rights & S_IXUSR) strcat(bufferRights, "X");
+                    else strcat(bufferRights, "-");
+
+                    //writing the output for user
+                    sprintf(buffer2, "User Rights: %s\n", bufferRights);
+                    if(write(*fOut, buffer2, strlen(buffer2)) < 0)
+                    {
+                        perror("Could not write!");
+                        exit(6);
+                    }
+
+                    //emptying buffer
+                    strcpy(bufferRights, "");
+
+                    //building output for group rights
+                    if(rights & S_IRGRP) strcat(bufferRights, "R");
+                    else strcat(bufferRights, "-");
+
+                    if(rights & S_IWGRP) strcat(bufferRights, "W");
+                    else strcat(bufferRights, "-");
+
+                    if(rights & S_IXGRP) strcat(bufferRights, "X");
+                    else strcat(bufferRights, "-");
+
+                    //writing the output for group
+                    sprintf(buffer2, "Group Rights: %s\n", bufferRights);
+                    if(write(*fOut, buffer2, strlen(buffer2)) < 0)
+                    {
+                        perror("Could not write!");
+                        exit(6);
+                    }
+
+                    //emptying buffer
+                    strcpy(bufferRights, "");
+
+                    //building output for others rights
+                    if(rights & S_IROTH) strcat(bufferRights, "R");
+                    else strcat(bufferRights, "-");
+
+                    if(rights & S_IWOTH) strcat(bufferRights, "W");
+                    else strcat(bufferRights, "-");
+
+                    if(rights & S_IXOTH) strcat(bufferRights, "X");
+                    else strcat(bufferRights, "-");
+
+                    //writing the output for others
+                    sprintf(buffer2, "Others Rights: %s\n\n", bufferRights);
+                    if(write(*fOut, buffer2, strlen(buffer2)) < 0)
+                    {
+                        perror("Could not write!");
+                        exit(6);
+                    }
+
+                    //emptying buffer
+                    strcpy(bufferRights, "");
+}
+
+void writeDirInfoToOutput(__uint8_t buffer2[], struct dirent *dirInput, int *fOut, struct stat arg)
+{
+    sprintf(buffer2, "Directory name: %s\n", dirInput->d_name);
+                    if (write(*fOut, buffer2, strlen(buffer2)) < 0)
+                    {
+                        perror("Error while writing! change message");
+                        exit(15);
+                    }
+
+                    sprintf(buffer2, "User ID: %u\n", arg.st_uid);
+                    if (write(*fOut, buffer2, strlen(buffer2)) < 0)
+                    {
+                        perror("Error while writing! change message");
+                        exit(15);
+                    }
+
+                    mode_t rights = arg.st_mode;
+                    char bufferRights[3] = "";
+
+                    // building output for user rights
+                    if (rights & S_IRUSR)
+                        strcat(bufferRights, "R");
+                    else
+                        strcat(bufferRights, "-");
+
+                    if (rights & S_IWUSR)
+                        strcat(bufferRights, "W");
+                    else
+                        strcat(bufferRights, "-");
+
+                    if (rights & S_IXUSR)
+                        strcat(bufferRights, "X");
+                    else
+                        strcat(bufferRights, "-");
+
+                    // writing the output for user
+                    sprintf(buffer2, "User Rights: %s\n", bufferRights);
+                    if (write(*fOut, buffer2, strlen(buffer2)) < 0)
+                    {
+                        perror("Could not write!");
+                        exit(6);
+                    }
+
+                    // emptying buffer
+                    strcpy(bufferRights, "");
+
+                    // building output for group rights
+                    if (rights & S_IRGRP)
+                        strcat(bufferRights, "R");
+                    else
+                        strcat(bufferRights, "-");
+
+                    if (rights & S_IWGRP)
+                        strcat(bufferRights, "W");
+                    else
+                        strcat(bufferRights, "-");
+
+                    if (rights & S_IXGRP)
+                        strcat(bufferRights, "X");
+                    else
+                        strcat(bufferRights, "-");
+
+                    // writing the output for group
+                    sprintf(buffer2, "Group Rights: %s\n", bufferRights);
+                    if (write(*fOut, buffer2, strlen(buffer2)) < 0)
+                    {
+                        perror("Could not write!");
+                        exit(6);
+                    }
+
+                    // emptying buffer
+                    strcpy(bufferRights, "");
+
+                    // building output for others rights
+                    if (rights & S_IROTH)
+                        strcat(bufferRights, "R");
+                    else
+                        strcat(bufferRights, "-");
+
+                    if (rights & S_IWOTH)
+                        strcat(bufferRights, "W");
+                    else
+                        strcat(bufferRights, "-");
+
+                    if (rights & S_IXOTH)
+                        strcat(bufferRights, "X");
+                    else
+                        strcat(bufferRights, "-");
+
+                    // writing the output for others
+                    sprintf(buffer2, "Others Rights: %s\n\n", bufferRights);
+                    if (write(*fOut, buffer2, strlen(buffer2)) < 0)
+                    {
+                        perror("Could not write!");
+                        exit(6);
+                    }
+
+                    // emptying buffer
+                    strcpy(bufferRights, "");
+}
+
 int main(int argc, char *argv[])
 {
     struct stat arg;                               //the struct stat type variable used to store statistics about the .bmp file
 
     initialize(argc, argv, arg);
 
-    int fInBmp, fInReg, fOut;                                 //file descriptors
+    int fInBmp, fInReg, fInLnk, fOut;              //file descriptors
     off_t offset;                                  //the offset I manually set so I can read what I want from the .bmp header
     __uint8_t buffer[BUFFSIZE], buffer2[STR_SIZE]; //buffers used for reading and writing info
+    DIR *dir;                                      //pointer of type DIR* used to store the address of the directory I work with
+    struct dirent *dirInput;                       //the struct dirent type pointer used to point to each directory entry we parse
 
-    //AICI COD PT S7 - init is done, open is next
-    DIR *dir = opendir(argv[1]);
-    
-    if(dir==NULL)
-    {
-        perror("Error when opening directory!");
-        exit(10);
-    }
+    openDirectory(argv, &dir);
     
     openOutputFile(&fOut);
 
-    struct dirent *dirInput;
+    //parsing every entry in our directory
     while((dirInput=readdir(dir))!=NULL)
     {
+        //building the path for each entry
         char path[STR_SIZE] = "";
         strcpy(path, argv[1]);
         char filename[STR_SIZE] = "";
@@ -309,210 +513,58 @@ int main(int argc, char *argv[])
         strcat(path, "/");
         strcat(path, filename);
         printf("CALEA: %s\n", path);
+
+        //getting information about each entry
         if((lstat(path, &arg)) < 0)
         {
             perror("Bad call");
             exit(11);
         }
-        if(S_ISLNK(arg.st_mode)){
-                struct stat target;
-                if((stat(path, &target)) < 0)
-                {
-                    perror("Bad call");
-                    exit(11);
-                }
-                writeFileNameToOutput(path, buffer2, &fOut);
-                sprintf(buffer2, "Symbolic Link Size: %lu bytes\n", arg.st_size);
-                if(write(fOut, buffer2, strlen(buffer2)) < 0)
-                {
-                    perror("Could not write!");
-                    exit(6);
-                }
-                sprintf(buffer2, "Target File Size: %lu bytes\n", target.st_size);
-                if(write(fOut, buffer2, strlen(buffer2)) < 0)
-                {
-                    perror("Could not write!");
-                    exit(6);
-                }
-                    mode_t rights = arg.st_mode;
-                    char bufferRights[3] = "";
 
-                    //building output for user rights
-                    if(rights & S_IRUSR) strcat(bufferRights, "R");
-                    else strcat(bufferRights, "-");
+        //checking each entry's type and writing the correct information to the output file
+        if(S_ISLNK(arg.st_mode))
+        {
+            openSourceFile(&fInLnk, path);
+            
+            writeSymLinkInfoToOutput(path, buffer2, &fOut, arg, dirInput);
 
-                    if(rights & S_IWUSR) strcat(bufferRights, "W");
-                    else strcat(bufferRights, "-");
-
-                    if(rights & S_IXUSR) strcat(bufferRights, "X");
-                    else strcat(bufferRights, "-");
-
-                    //writing the output for user
-                    sprintf(buffer2, "User Rights: %s\n", bufferRights);
-                    if(write(fOut, buffer2, strlen(buffer2)) < 0)
-                    {
-                        perror("Could not write!");
-                        exit(6);
-                    }
-
-                    //emptying buffer
-                    strcpy(bufferRights, "");
-
-                    //building output for group rights
-                    if(rights & S_IRGRP) strcat(bufferRights, "R");
-                    else strcat(bufferRights, "-");
-
-                    if(rights & S_IWGRP) strcat(bufferRights, "W");
-                    else strcat(bufferRights, "-");
-
-                    if(rights & S_IXGRP) strcat(bufferRights, "X");
-                    else strcat(bufferRights, "-");
-
-                    //writing the output for group
-                    sprintf(buffer2, "Group Rights: %s\n", bufferRights);
-                    if(write(fOut, buffer2, strlen(buffer2)) < 0)
-                    {
-                        perror("Could not write!");
-                        exit(6);
-                    }
-
-                    //emptying buffer
-                    strcpy(bufferRights, "");
-
-                    //building output for others rights
-                    if(rights & S_IROTH) strcat(bufferRights, "R");
-                    else strcat(bufferRights, "-");
-
-                    if(rights & S_IWOTH) strcat(bufferRights, "W");
-                    else strcat(bufferRights, "-");
-
-                    if(rights & S_IXOTH) strcat(bufferRights, "X");
-                    else strcat(bufferRights, "-");
-
-                    //writing the output for others
-                    sprintf(buffer2, "Others Rights: %s\n\n", bufferRights);
-                    if(write(fOut, buffer2, strlen(buffer2)) < 0)
-                    {
-                        perror("Could not write!");
-                        exit(6);
-                    }
-
-                    //emptying buffer
-                    strcpy(bufferRights, "");
+            closeFile(&fInLnk);
         }
         else{
-        if(S_ISREG(arg.st_mode))
-        {
-            if(strcmp(path+strlen(path)-strlen(".bmp"), ".bmp")==0)
+            if(S_ISREG(arg.st_mode))
             {
-                openSourceFile(&fInBmp, path);
+                if(strcmp(path+strlen(path)-strlen(".bmp"), ".bmp")==0)
+                {
+                    openSourceFile(&fInBmp, path);
 
-                writeFileNameToOutput(path, buffer2, &fOut);
-                
-                readFromBMPHeaderWriteInfoToOutput(offset, &fInBmp, &fOut, buffer, buffer2);
-                
-                writeInfoToOutputUsingStatInfo(path, arg, buffer2, &fOut);
-                
-                closeFile(&fInBmp);
+                    writeFileNameToOutput(path, buffer2, &fOut);
+                    
+                    readFromBMPHeaderWriteInfoToOutput(offset, &fInBmp, &fOut, buffer, buffer2);
+                    
+                    writeInfoToOutputUsingStatInfo(path, arg, buffer2, &fOut);
+                    
+                    closeFile(&fInBmp);
+                }
+                else
+                {
+                    openSourceFile(&fInReg, path);
+
+                    writeFileNameToOutput(path, buffer2, &fOut);
+
+                    writeFileSizeToOutputUsingStat(path, arg, buffer2, &fOut);
+
+                    writeInfoToOutputUsingStatInfo(path, arg, buffer2, &fOut);
+
+                    closeFile(&fInReg);
+                }
             }
             else
             {
-                openSourceFile(&fInReg, path);
-
-                writeFileNameToOutput(path, buffer2, &fOut);
-
-                writeFileSizeToOutputUsingStat(path, arg, buffer2, &fOut);
-
-                writeInfoToOutputUsingStatInfo(path, arg, buffer2, &fOut);
-
-                closeFile(&fInReg);
-            }
-        }
-        else
-        {
-                if(S_ISDIR(arg.st_mode))
+                if (S_ISDIR(arg.st_mode))
                 {
-                    sprintf(buffer2, "Directory name: %s\n", dirInput->d_name);
-                    if(write(fOut, buffer2, strlen(buffer2)) < 0)
-                    {
-                        perror("Error while writing! change message");
-                        exit(15);
-                    }
-
-                    sprintf(buffer2, "User ID: %u\n", arg.st_uid);
-                    if(write(fOut, buffer2, strlen(buffer2)) < 0)
-                    {
-                        perror("Error while writing! change message");
-                        exit(15);
-                    }
-
-                    mode_t rights = arg.st_mode;
-                    char bufferRights[3] = "";
-
-                    //building output for user rights
-                    if(rights & S_IRUSR) strcat(bufferRights, "R");
-                    else strcat(bufferRights, "-");
-
-                    if(rights & S_IWUSR) strcat(bufferRights, "W");
-                    else strcat(bufferRights, "-");
-
-                    if(rights & S_IXUSR) strcat(bufferRights, "X");
-                    else strcat(bufferRights, "-");
-
-                    //writing the output for user
-                    sprintf(buffer2, "User Rights: %s\n", bufferRights);
-                    if(write(fOut, buffer2, strlen(buffer2)) < 0)
-                    {
-                        perror("Could not write!");
-                        exit(6);
-                    }
-
-                    //emptying buffer
-                    strcpy(bufferRights, "");
-
-                    //building output for group rights
-                    if(rights & S_IRGRP) strcat(bufferRights, "R");
-                    else strcat(bufferRights, "-");
-
-                    if(rights & S_IWGRP) strcat(bufferRights, "W");
-                    else strcat(bufferRights, "-");
-
-                    if(rights & S_IXGRP) strcat(bufferRights, "X");
-                    else strcat(bufferRights, "-");
-
-                    //writing the output for group
-                    sprintf(buffer2, "Group Rights: %s\n", bufferRights);
-                    if(write(fOut, buffer2, strlen(buffer2)) < 0)
-                    {
-                        perror("Could not write!");
-                        exit(6);
-                    }
-
-                    //emptying buffer
-                    strcpy(bufferRights, "");
-
-                    //building output for others rights
-                    if(rights & S_IROTH) strcat(bufferRights, "R");
-                    else strcat(bufferRights, "-");
-
-                    if(rights & S_IWOTH) strcat(bufferRights, "W");
-                    else strcat(bufferRights, "-");
-
-                    if(rights & S_IXOTH) strcat(bufferRights, "X");
-                    else strcat(bufferRights, "-");
-
-                    //writing the output for others
-                    sprintf(buffer2, "Others Rights: %s\n\n", bufferRights);
-                    if(write(fOut, buffer2, strlen(buffer2)) < 0)
-                    {
-                        perror("Could not write!");
-                        exit(6);
-                    }
-
-                    //emptying buffer
-                    strcpy(bufferRights, "");
+                    writeDirInfoToOutput(buffer2, dirInput, &fOut, arg);
                 }
-        }
+            }
         }
     }
 
