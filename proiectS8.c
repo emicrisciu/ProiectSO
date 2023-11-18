@@ -14,6 +14,7 @@
 
 #define BUFFSIZE 4
 #define STR_SIZE 280
+#define PIXELBUFFSIZE 3
 
 //initialization function: building the error message and checking the correctness of the arguments
 void initialize(int argc, char *argv[], struct stat arg)
@@ -398,6 +399,71 @@ void closeDirectory(DIR **dir)
     }
 }
 
+void changeColor(off_t offset, int *fIn, __uint8_t buffer[], char *path)
+{
+    // offset = lseek(*fIn, 54, SEEK_SET); //pozitionare in raster data (avem 24bits/pixel deci nu mai avem campul colorTable)
+
+    // int noOfPixels = 1920 * 1280;
+    // int i = 0;
+
+    // int fOut;
+
+    // openOutputFile(&fOut, path);
+
+    char buff[54];
+
+    int fOut;
+    openOutputFile(&fOut, "inputDir/modif.bmp");
+
+    if(read(*fIn, buff, 54) != -1)
+    {
+        if(write(fOut, buff, 54) < 0)
+        {
+            perror("eror");
+            exit(17);
+        }
+    }
+
+    int noOfPixels = 1920 * 1280;
+    int i = 0;
+
+    while(i < noOfPixels)
+    {
+        if(read(*fIn, buffer, PIXELBUFFSIZE) != -1)
+        {
+            //unsigned colorsUsed = buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24);
+            //printf("\n%u\n", colorsUsed);
+            //sprintf(buffer2, ": %u bytes\n", (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24)));
+
+            __uint8_t red = buffer[0];
+            __uint8_t green = buffer[1];
+            __uint8_t blue = buffer[2];
+
+            __uint8_t grey = 0.299 * red + 0.587 * green + 0.114 * blue;
+
+            buffer[0] = grey;
+            buffer[1] = grey;
+            buffer[2] = grey;
+
+            //offset = lseek(*fIn, -3, SEEK_CUR);
+
+            if(write(fOut, buffer, PIXELBUFFSIZE) < 0)
+            {
+                perror("Could not write!");
+                exit(6);
+            }
+
+        }
+        else {
+            perror("Reading error!");
+            exit(7);
+        }
+        i++;
+    }
+
+    closeOutputFile(&fOut);
+}
+
 int main(int argc, char *argv[])
 {
     struct stat arg;                               //the struct stat type variable used to store statistics about the .bmp file
@@ -407,6 +473,7 @@ int main(int argc, char *argv[])
     int fInBmp, fInReg, fInLnk, fOut;              //file descriptors
     off_t offset;                                  //the offset I manually set so I can read what I want from the .bmp header
     __uint8_t buffer[BUFFSIZE], buffer2[STR_SIZE]; //buffers used for reading and writing info
+    __uint8_t pixelBuffer[PIXELBUFFSIZE];
     DIR *dir, *dirOut;                             //pointers of type DIR* used to store the addresses of the directories I work with
     struct dirent *dirInput;                       //the struct dirent type pointer used to point to each directory entry we parse
 
@@ -495,6 +562,26 @@ int main(int argc, char *argv[])
                         closeFile(&fInBmp);
 
                         closeOutputFile(&fOut);
+
+                        exit(count);
+                    }
+
+                    count++;
+
+                    if((pid = fork()) < 0)
+                    {
+                        perror("Error when creating child process!");
+                        exit(12);
+                    }
+
+                    if(pid == 0)
+                    {
+                        openSourceFile(&fInBmp, path);
+
+                        //...cod pt schimbare culoare
+                        changeColor(offset, &fInBmp, pixelBuffer, path);
+                        
+                        closeFile(&fInBmp);
 
                         exit(count);
                     }
