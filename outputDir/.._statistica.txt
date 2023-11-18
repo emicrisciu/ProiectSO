@@ -1,0 +1,6 @@
+Directory name: ..
+User ID: 1000
+User Rights: RWX
+Group Rights: RWX
+Others Rights: R-X
+
