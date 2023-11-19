@@ -401,40 +401,51 @@ void closeDirectory(DIR **dir)
 
 void changeColor(off_t offset, int *fIn, __uint8_t buffer[], char *path)
 {
-    // offset = lseek(*fIn, 54, SEEK_SET); //pozitionare in raster data (avem 24bits/pixel deci nu mai avem campul colorTable)
-
-    // int noOfPixels = 1920 * 1280;
-    // int i = 0;
-
-    // int fOut;
-
-    // openOutputFile(&fOut, path);
-
-    char buff[54];
-
+    __uint8_t buff[BUFFSIZE];
     int fOut;
-    openOutputFile(&fOut, "inputDir/modif.bmp");
+    __uint32_t width, height;
+    __uint64_t noOfPixels;
+    int i = 0;
 
-    if(read(*fIn, buff, 54) != -1)
+    //I open the file with options to read and also write
+    if((*fIn=open(path, O_RDWR)) < 0)
     {
-        if(write(fOut, buff, 54) < 0)
-        {
-            perror("eror");
-            exit(17);
-        }
+        perror("Could not open the source file!");
+        exit(4);
     }
 
-    int noOfPixels = 1920 * 1280;
-    int i = 0;
+    //there are 54 bytes of header information until I get to width and height info
+    offset = lseek(*fIn, 18, SEEK_SET);
+
+    //reading the width
+    if(read(*fIn, buff, BUFFSIZE) != -1)
+    {
+        width = (__uint32_t)buff[0] | ((__uint32_t)buff[1] << 8) | ((__uint32_t)buff[2] << 16) | ((__uint32_t)buff[3] << 24);
+    }
+    else {
+        perror("Reading error!");
+        exit(7);
+    }
+
+    //reading the height
+    if(read(*fIn, buff, BUFFSIZE) != -1)
+    {
+        height = (__uint32_t)buff[0] | ((__uint32_t)buff[1] << 8) | ((__uint32_t)buff[2] << 16) | ((__uint32_t)buff[3] << 24);
+    }
+    else {
+        perror("Reading error!");
+        exit(7);
+    }
+
+    //there are 28 bytes of header information remaining until I get to the raster data
+    offset = lseek(*fIn, 28, SEEK_CUR);
+
+    noOfPixels = width * height;
 
     while(i < noOfPixels)
     {
         if(read(*fIn, buffer, PIXELBUFFSIZE) != -1)
         {
-            //unsigned colorsUsed = buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24);
-            //printf("\n%u\n", colorsUsed);
-            //sprintf(buffer2, ": %u bytes\n", (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24)));
-
             __uint8_t red = buffer[0];
             __uint8_t green = buffer[1];
             __uint8_t blue = buffer[2];
@@ -445,9 +456,9 @@ void changeColor(off_t offset, int *fIn, __uint8_t buffer[], char *path)
             buffer[1] = grey;
             buffer[2] = grey;
 
-            //offset = lseek(*fIn, -3, SEEK_CUR);
+            lseek(*fIn, -3, SEEK_CUR);
 
-            if(write(fOut, buffer, PIXELBUFFSIZE) < 0)
+            if(write(*fIn, buffer, PIXELBUFFSIZE) < 0)
             {
                 perror("Could not write!");
                 exit(6);
@@ -576,9 +587,6 @@ int main(int argc, char *argv[])
 
                     if(pid == 0)
                     {
-                        openSourceFile(&fInBmp, path);
-
-                        //...cod pt schimbare culoare
                         changeColor(offset, &fInBmp, pixelBuffer, path);
                         
                         closeFile(&fInBmp);
