@@ -498,11 +498,13 @@ int main(int argc, char *argv[])
     DIR *dir, *dirOut;                             //pointers of type DIR* used to store the addresses of the directories I work with
     struct dirent *dirInput;                       //the struct dirent type pointer used to point to each directory entry we parse
 
-    int pid;                                       //the process id returned by fork function
+    int pid, pid1, pid2;                           //the process ids returned by fork function
     int status;                                    //the code (status) a child process ends with
     int count = 0;                                 //counts the number of child processes created so I can check later on if they are done
 
     int child2child[2], child2parent[2];           //file descriptors used for pipe ends
+
+    int countSentences = 0;                        //counter for the correct sentences in regular files
 
     openDirectory(argv[1], &dir);
 
@@ -620,15 +622,15 @@ int main(int argc, char *argv[])
                         exit(errno);
                     }
 
-                    count++;
+                    //count++;
                     
-                    if((pid = fork()) < 0)
+                    if((pid1 = fork()) < 0)
                     {
                         perror("Error when creating child process!");
                         exit(12);
                     }
 
-                    if(pid == 0)
+                    if(pid1 == 0)
                     {
                         openOutputFile(&fOut, outputPath);
 
@@ -640,7 +642,7 @@ int main(int argc, char *argv[])
 
                         writeInfoToOutputUsingStatInfo(path, arg, buffer2, &fOut);
 
-                        lseek(fInReg, 0, SEEK_SET); //vezi
+                        lseek(fInReg, 0, SEEK_SET);
 
                         //mai trebuie aici scrierea in pipe a continutului fisierului
                         if(close(child2child[0]) < 0) //inchidere capat citire => acest proces va scrie in pipe
@@ -679,15 +681,15 @@ int main(int argc, char *argv[])
                         exit(count);
                     }
 
-                    count++;
+                    //count++;
 
-                    if((pid = fork()) < 0)
+                    if((pid2 = fork()) < 0)
                     {
                         perror("Error when creating child process!");
                         exit(12);
                     }
 
-                    if(pid == 0)
+                    if(pid2 == 0)
                     {
                         if(close(child2child[1]) < 0) //inchidere capat scriere => acest proces va citi din pipe
                         {
@@ -743,6 +745,44 @@ int main(int argc, char *argv[])
                         perror("Error when closing a pipe end!");
                         exit(errno);
                     }
+                    
+                    //waitpid(pid1, &status, 0);
+                    //waitpid(pid2, &status, 0);
+
+                    int child;
+                    if ((child = waitpid(pid1, &status, 0)) < 0)
+                    {
+                        perror("Error when waiting for child process to end!");
+                        exit(13);
+                    }
+                    if (WIFEXITED(status))
+                    {
+                        printf("S-a incheiat procesul cu pid-ul %d si codul %d si parinte %d\n", child, WEXITSTATUS(status), getppid());
+                    }
+
+                    //int child;
+                    if ((child = waitpid(pid2, &status, 0)) < 0)
+                    {
+                        perror("Error when waiting for child process to end!");
+                        exit(13);
+                    }
+                    if (WIFEXITED(status))
+                    {
+                        printf("S-a incheiat procesul cu pid-ul %d si codul %d si parinte %d\n", child, WEXITSTATUS(status), getppid());
+                    }
+
+                    __uint8_t readFromPipeBuffer[BUFFSIZE];
+
+                    if (read(child2parent[0], readFromPipeBuffer, BUFFSIZE) != -1)
+                    {
+                        // printf("%d\n\n\n", atoi(readFromPipeBuffer));
+                        countSentences += atoi(readFromPipeBuffer);
+                    }
+                    else
+                    {
+                        perror("Error when reading from pipe!");
+                        exit(errno);
+                    }
                 }
             }
             else
@@ -780,8 +820,6 @@ int main(int argc, char *argv[])
 
     // COD PARINTE!!
 
-    
-
     for(int i = 0 ; i < count; i++)
     {
         int child;
@@ -792,23 +830,8 @@ int main(int argc, char *argv[])
         }
         if(WIFEXITED(status))
         {
-            printf("S-a incheiat procesul cu pid-ul %d si codul %d\n", child, WEXITSTATUS(status));
+            printf("S-a incheiat procesul cu pid-ul %d si codul %d si parinte %d\n", child, WEXITSTATUS(status), getppid());
         }
-    }
-
-    __uint8_t readFromPipeBuffer[BUFFSIZE];
-
-    int countSentences = 0;
-
-    if (read(child2parent[0], readFromPipeBuffer, BUFFSIZE) != -1)
-    {
-        //printf("%s\n\n\n", readFromPipeBuffer);
-        countSentences += atoi(readFromPipeBuffer);
-    }
-    else
-    {
-        perror("Error when reading from pipe!");
-        exit(errno);
     }
 
     printf("Numar propozitii corecte: %d\n", countSentences);
