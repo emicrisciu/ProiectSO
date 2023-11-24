@@ -502,6 +502,8 @@ int main(int argc, char *argv[])
     int status;                                    //the code (status) a child process ends with
     int count = 0;                                 //counts the number of child processes created so I can check later on if they are done
 
+    int child2child[2], child2parent[2];           //file descriptors used for pipe ends
+
     openDirectory(argv[1], &dir);
 
     //parsing every entry in our directory
@@ -606,9 +608,19 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    count++;
+                    if (pipe(child2child) < 0)
+                    {
+                        perror("Error when creating a pipe!");
+                        exit(errno);
+                    }
 
-                    int child2child[2]; //descriptori capete pipe fiu-fiu
+                    if (pipe(child2parent) < 0)
+                    {
+                        perror("Error when creating a pipe!");
+                        exit(errno);
+                    }
+
+                    count++;
                     
                     if((pid = fork()) < 0)
                     {
@@ -618,12 +630,6 @@ int main(int argc, char *argv[])
 
                     if(pid == 0)
                     {
-                        if(pipe(child2child) < 0) // creare pipe fiu-fiu
-                        {
-                            perror("Error when creating a pipe!");
-                            exit(errno);
-                        }
-
                         openOutputFile(&fOut, outputPath);
 
                         openSourceFile(&fInReg, path);
@@ -634,6 +640,8 @@ int main(int argc, char *argv[])
 
                         writeInfoToOutputUsingStatInfo(path, arg, buffer2, &fOut);
 
+                        lseek(fInReg, 0, SEEK_SET); //vezi
+
                         //mai trebuie aici scrierea in pipe a continutului fisierului
                         if(close(child2child[0]) < 0) //inchidere capat citire => acest proces va scrie in pipe
                         {
@@ -641,18 +649,18 @@ int main(int argc, char *argv[])
                             exit(errno);
                         }
 
+                        if(close(child2parent[0]) < 0) 
+                        {
+                            perror("Error when closing a pipe end!");
+                            exit(errno);
+                        }
+                        if(close(child2parent[1]) < 0) 
+                        {
+                            perror("Error when closing a pipe end!");
+                            exit(errno);
+                        }
+
                         dup2(child2child[1], 1); //redirectare iesire standard
-
-                        // lseek(fInReg, 0, SEEK_SET);
-
-                        // while(read(fInReg, buffer, BUFFSIZE) != 0)
-                        // {
-                        //     if(write(child2child[1], buffer, strlen(buffer)) < 0)  //scriere in pipe
-                        //     {
-                        //         perror("Error when writing in pipe!");
-                        //         exit(errno);
-                        //     }
-                        // }
 
                         if(close(child2child[1]) < 0) //inchidere capat folosit
                         {
@@ -673,20 +681,6 @@ int main(int argc, char *argv[])
 
                     count++;
 
-                    int child2parent[2];
-
-                    if(pipe(child2parent) < 0)
-                    {
-                        perror("Error when creating a pipe!");
-                        exit(errno);
-                    }
-
-                    if(close(child2parent[1]) < 0) //inchidere capat scriere => acest proces (parinte) va citi din pipe
-                    {
-                        perror("Error when closing a pipe end!");
-                        exit(errno);
-                    }
-
                     if((pid = fork()) < 0)
                     {
                         perror("Error when creating child process!");
@@ -701,7 +695,7 @@ int main(int argc, char *argv[])
                             exit(errno);
                         }
 
-                        if(close(child2parent[0]) < 0) //inchidere capat citire => acest proces va scrie in pipe (catre parinte)
+                        if(close(child2parent[0]) < 0) 
                         {
                             perror("Error when closing a pipe end!");
                             exit(errno);
@@ -710,35 +704,44 @@ int main(int argc, char *argv[])
                         dup2(child2child[0], 0); //redirectare STDIN
                         dup2(child2parent[1], 1); //redirectare STDOUT
 
-                        if(close(child2child[0]) < 0) //inchidere capat folosit
+                        if(close(child2child[0]) < 0)
                         {
                             perror("Error when closing a pipe end!");
                             exit(errno);
                         }
 
-                        if(close(child2parent[1]) < 0) //inchidere capat folosit
+                        if(close(child2parent[1]) < 0)
                         {
                             perror("Error when closing a pipe end!");
                             exit(errno);
                         }
 
-                        execlp("bash", "bash", "script", argv[3][0], NULL);
+                        execlp("bash", "bash", "script.sh", argv[3], NULL);
 
-                        // openOutputFile(&fOut, outputPath);
+                        closeFile(&fInReg);
 
-                        // openSourceFile(&fInReg, path);
+                        closeOutputFile(&fOut);
 
-                        // writeFileNameToOutput(dirInput, buffer2, &fOut);
+                        exit(count);
+                    }
 
-                        // writeFileSizeToOutputUsingStat(path, arg, buffer2, &fOut);
+                    //cod parinte
+                    if (close(child2child[0]) < 0)
+                    {
+                        perror("Error when closing a pipe end!");
+                        exit(errno);
+                    }
 
-                        // writeInfoToOutputUsingStatInfo(path, arg, buffer2, &fOut);
+                    if (close(child2child[1]) < 0)
+                    {
+                        perror("Error when closing a pipe end!");
+                        exit(errno);
+                    }
 
-                        // closeFile(&fInReg);
-
-                        // closeOutputFile(&fOut);
-
-                        // exit(count);
+                    if (close(child2parent[1]) < 0)
+                    {
+                        perror("Error when closing a pipe end!");
+                        exit(errno);
                     }
                 }
             }
@@ -775,6 +778,10 @@ int main(int argc, char *argv[])
         }
     }
 
+    // COD PARINTE!!
+
+    
+
     for(int i = 0 ; i < count; i++)
     {
         int child;
@@ -789,7 +796,30 @@ int main(int argc, char *argv[])
         }
     }
 
+    __uint8_t readFromPipeBuffer[BUFFSIZE];
+
+    int countSentences = 0;
+
+    if (read(child2parent[0], readFromPipeBuffer, BUFFSIZE) != -1)
+    {
+        //printf("%s\n\n\n", readFromPipeBuffer);
+        countSentences += atoi(readFromPipeBuffer);
+    }
+    else
+    {
+        perror("Error when reading from pipe!");
+        exit(errno);
+    }
+
+    printf("Numar propozitii corecte: %d\n", countSentences);
+
     closeDirectory(&dir);
+
+    if(close(child2parent[0]) < 0)
+    {
+        perror("Error when closing a pipe end!");
+        exit(errno);
+    }
 
     printf("\nProgram ended successfully! Every information is now written inside the output folder!\n");
 

@@ -1,0 +1,3 @@
+Proiect la Sisteme de Operare.
+Test propozitie incorecta care contine a
+Propozitia asta contine a.

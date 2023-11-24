@@ -1,6 +1,6 @@
 Symbolic Link Name: poliShortcut
 Symbolic Link Size: 8 bytes
-Target File Size: 33 bytes
+Target File Size: 34 bytes
 User Rights: RWX
 Group Rights: RWX
 Others Rights: RWX
