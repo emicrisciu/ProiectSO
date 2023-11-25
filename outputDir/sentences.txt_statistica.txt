@@ -1,0 +1,9 @@
+File Name: sentences.txt
+File Size: 116 bytes
+User ID: 1000
+Time Of Last Modification: Sat Nov 25 17:16:29 2023
+Links Count: 1
+User Rights: RW-
+Group Rights: RW-
+Others Rights: R--
+

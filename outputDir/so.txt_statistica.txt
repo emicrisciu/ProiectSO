@@ -1,7 +1,7 @@
 File Name: so.txt
 File Size: 99 bytes
 User ID: 1000
-Time Of Last Modification: Fri Nov 24 15:46:47 2023
+Time Of Last Modification: Sat Nov 25 16:45:57 2023
 Links Count: 1
 User Rights: RW-
 Group Rights: RW-
