@@ -25,7 +25,7 @@ void initialize(int argc, char *argv[], struct stat arg)
     if(argc!=4)
     {
         perror(errorString);
-        exit(1);
+        exit(errno);
     }
     strcat(errorString, " ");
     strcat(errorString, argv[1]);
@@ -33,13 +33,13 @@ void initialize(int argc, char *argv[], struct stat arg)
     if ((stat(argv[1], &arg)) < 0)
     {
         perror("Bad call");
-        exit(2);
+        exit(errno);
     }
 
     if(!S_ISDIR(arg.st_mode))
     {
         perror(errorString);
-        exit(3);
+        exit(errno);
     }
 
     strcat(errorString, " ");
@@ -48,13 +48,13 @@ void initialize(int argc, char *argv[], struct stat arg)
     if ((stat(argv[2], &arg)) < 0)
     {
         perror("Bad call");
-        exit(2);
+        exit(errno);
     }
 
     if(!S_ISDIR(arg.st_mode))
     {
         perror(errorString);
-        exit(3);
+        exit(errno);
     }
 
     strcat(errorString, " ");
@@ -76,7 +76,7 @@ void openDirectory(char *path, DIR **dir)
     if(*dir==NULL)
     {
         perror("Error when opening directory!");
-        exit(10);
+        exit(errno);
     }
 }
 
@@ -89,7 +89,7 @@ void openSourceFile(int *fIn, char *path)
     if((*fIn=open(path, O_RDONLY)) < 0)
     {
         perror("Could not open the source file!");
-        exit(4);
+        exit(errno);
     }
 }
 
@@ -99,7 +99,7 @@ void openOutputFile(int *fOut, char *path)
     if((*fOut=open(path, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR)) < 0)
     {
         perror("Could not open the output (.txt) file!");
-        exit(5);
+        exit(errno);
     }
 }
 
@@ -111,7 +111,7 @@ void writeFileNameToOutput(struct dirent *dirInput, __uint8_t buffer2[], int *fO
     if(write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
-        exit(6);
+        exit(errno);
     }
 }
 
@@ -128,12 +128,12 @@ void readFromBMPHeaderWriteInfoToOutput(off_t offset, int *fIn, int *fOut, __uin
         if(write(*fOut, buffer2, strlen(buffer2)) < 0)
         {
             perror("Could not write!");
-            exit(6);
+            exit(errno);
         }
     }
     else {
         perror("Reading error!");
-        exit(7);
+        exit(errno);
     }
 
     offset = lseek(*fIn, 12, SEEK_CUR);
@@ -144,12 +144,12 @@ void readFromBMPHeaderWriteInfoToOutput(off_t offset, int *fIn, int *fOut, __uin
         if(write(*fOut, buffer2, strlen(buffer2)) < 0)
         {
             perror("Could not write!");
-            exit(6);
+            exit(errno);
         }
     }
     else {
         perror("Reading error!");
-        exit(7);
+        exit(errno);
     }    
 
     if(read(*fIn, buffer, BUFFSIZE) != -1)
@@ -158,12 +158,12 @@ void readFromBMPHeaderWriteInfoToOutput(off_t offset, int *fIn, int *fOut, __uin
         if(write(*fOut, buffer2, strlen(buffer2)) < 0)
         {
             perror("Could not write!");
-            exit(6);
+            exit(errno);
         }
     }
     else {
         perror("Reading error!");
-        exit(7);
+        exit(errno);
     } 
 
     offset = lseek(*fIn, 8, SEEK_CUR);
@@ -174,12 +174,12 @@ void readFromBMPHeaderWriteInfoToOutput(off_t offset, int *fIn, int *fOut, __uin
         if(write(*fOut, buffer2, strlen(buffer2)) < 0)
         {
             perror("Could not write!");
-            exit(6);
+            exit(errno);
         }
     }
     else {
         perror("Reading error!");
-        exit(7);
+        exit(errno);
     }
 }
 
@@ -210,7 +210,7 @@ void writeAccessRightsInfo(struct stat arg, __uint8_t buffer2[], int *fOut)
     if (write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
-        exit(6);
+        exit(errno);
     }
 
     // emptying buffer
@@ -237,7 +237,7 @@ void writeAccessRightsInfo(struct stat arg, __uint8_t buffer2[], int *fOut)
     if (write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
-        exit(6);
+        exit(errno);
     }
 
     // emptying buffer
@@ -264,7 +264,7 @@ void writeAccessRightsInfo(struct stat arg, __uint8_t buffer2[], int *fOut)
     if (write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
-        exit(6);
+        exit(errno);
     }
 
     // emptying buffer
@@ -277,14 +277,14 @@ void writeInfoToOutputUsingStatInfo(char *path, struct stat arg, __uint8_t buffe
     if ((stat(path, &arg)) < 0)
     {
         perror("Bad call");
-        exit(2);
+        exit(errno);
     }
 
     sprintf(buffer2, "User ID: %u\n", arg.st_uid);
     if(write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
-        exit(6);
+        exit(errno);
     }
 
     time_t last_modif_time = arg.st_mtime;
@@ -292,14 +292,14 @@ void writeInfoToOutputUsingStatInfo(char *path, struct stat arg, __uint8_t buffe
     if(write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
-        exit(6);
+        exit(errno);
     }
 
     sprintf(buffer2, "Links Count: %ld\n", arg.st_nlink);
     if(write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
-        exit(6);
+        exit(errno);
     }
 
     writeAccessRightsInfo(arg, buffer2, fOut);
@@ -312,14 +312,14 @@ void writeFileSizeToOutputUsingStat(char *path, struct stat arg, char buffer2[],
     if ((stat(path, &arg)) < 0)
     {
         perror("Bad call");
-        exit(2);
+        exit(errno);
     }
 
     sprintf(buffer2, "File Size: %lu bytes\n", arg.st_size);
     if(write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
-        exit(6);
+        exit(errno);
     }
 }
 
@@ -331,28 +331,28 @@ void writeSymLinkInfoToOutput(char path[], __uint8_t buffer2[], int *fOut, struc
     if ((stat(path, &target)) < 0)
     {
         perror("Bad call");
-        exit(11);
+        exit(errno);
     }
 
     sprintf(buffer2, "Symbolic Link Name: %s\n", dirInput->d_name);
     if (write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
-        exit(6);
+        exit(errno);
     }
 
     sprintf(buffer2, "Symbolic Link Size: %lu bytes\n", arg.st_size);
     if (write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
-        exit(6);
+        exit(errno);
     }
 
     sprintf(buffer2, "Target File Size: %lu bytes\n", target.st_size);
     if (write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Could not write!");
-        exit(6);
+        exit(errno);
     }
 
     writeAccessRightsInfo(arg, buffer2, fOut);
@@ -365,14 +365,14 @@ void writeDirInfoToOutput(__uint8_t buffer2[], struct dirent *dirInput, int *fOu
     if (write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Error while writing! change message");
-        exit(15);
+        exit(errno);
     }
 
     sprintf(buffer2, "User ID: %u\n", arg.st_uid);
     if (write(*fOut, buffer2, strlen(buffer2)) < 0)
     {
         perror("Error while writing! change message");
-        exit(15);
+        exit(errno);
     }
 
     writeAccessRightsInfo(arg, buffer2, fOut);
@@ -384,7 +384,7 @@ void closeFile(int *fd)
     if((close(*fd)) < 0)
     {
         perror("Could not close the file!");
-        exit(14);
+        exit(errno);
     }
 }
 
@@ -395,7 +395,7 @@ void closeOutputFile(int *fOut)
     if((close(*fOut)) < 0)
     {
         perror("Could not close the file!");
-        exit(14);
+        exit(errno);
     }
 }
 
@@ -405,7 +405,7 @@ void closeDirectory(DIR **dir)
     if((closedir(*dir))!=0)
     {
         perror("Error when closing directory!");
-        exit(13);
+        exit(errno);
     }
 }
 
@@ -421,7 +421,7 @@ void changeColor(off_t offset, int *fIn, __uint8_t buffer[], char *path)
     if((*fIn=open(path, O_RDWR)) < 0)
     {
         perror("Could not open the source file!");
-        exit(4);
+        exit(errno);
     }
 
     //there are 54 bytes of header information until I get to width and height info
@@ -434,7 +434,7 @@ void changeColor(off_t offset, int *fIn, __uint8_t buffer[], char *path)
     }
     else {
         perror("Reading error!");
-        exit(7);
+        exit(errno);
     }
 
     //reading the height
@@ -444,7 +444,7 @@ void changeColor(off_t offset, int *fIn, __uint8_t buffer[], char *path)
     }
     else {
         perror("Reading error!");
-        exit(7);
+        exit(errno);
     }
 
     //there are 28 bytes of header information remaining until I get to the raster data
@@ -477,7 +477,7 @@ void changeColor(off_t offset, int *fIn, __uint8_t buffer[], char *path)
         }
         else {
             perror("Reading error!");
-            exit(7);
+            exit(errno);
         }
         i++;
     }
@@ -530,7 +530,7 @@ int main(int argc, char *argv[])
         if((lstat(path, &arg)) < 0)
         {
             perror("Bad call");
-            exit(11);
+            exit(errno);
         }
 
         //checking each entry's type and writing the correct information to the output file
@@ -541,7 +541,7 @@ int main(int argc, char *argv[])
             if((pid = fork()) < 0)
             {
                 perror("Error when creating child process!");
-                exit(12);
+                exit(errno);
             }
 
             if(pid == 0)
@@ -569,7 +569,7 @@ int main(int argc, char *argv[])
                     if((pid = fork()) < 0)
                     {
                         perror("Error when creating child process!");
-                        exit(12);
+                        exit(errno);
                     }
 
                     if(pid == 0)
@@ -596,7 +596,7 @@ int main(int argc, char *argv[])
                     if((pid = fork()) < 0)
                     {
                         perror("Error when creating child process!");
-                        exit(12);
+                        exit(errno);
                     }
 
                     if(pid == 0)
@@ -627,7 +627,7 @@ int main(int argc, char *argv[])
                     if((pid1 = fork()) < 0)
                     {
                         perror("Error when creating child process!");
-                        exit(12);
+                        exit(errno);
                     }
 
                     if(pid1 == 0)
@@ -686,7 +686,7 @@ int main(int argc, char *argv[])
                     if((pid2 = fork()) < 0)
                     {
                         perror("Error when creating child process!");
-                        exit(12);
+                        exit(errno);
                     }
 
                     if(pid2 == 0)
@@ -753,7 +753,7 @@ int main(int argc, char *argv[])
                     if ((child = waitpid(pid1, &status, 0)) < 0)
                     {
                         perror("Error when waiting for child process to end!");
-                        exit(13);
+                        exit(errno);
                     }
                     if (WIFEXITED(status))
                     {
@@ -764,7 +764,7 @@ int main(int argc, char *argv[])
                     if ((child = waitpid(pid2, &status, 0)) < 0)
                     {
                         perror("Error when waiting for child process to end!");
-                        exit(13);
+                        exit(errno);
                     }
                     if (WIFEXITED(status))
                     {
@@ -794,7 +794,7 @@ int main(int argc, char *argv[])
                     if((pid = fork()) < 0)
                     {
                         perror("Error when creating child process!");
-                        exit(12);
+                        exit(errno);
                     }
 
                     if(pid == 0)
@@ -826,7 +826,7 @@ int main(int argc, char *argv[])
         if((child = wait(&status)) < 0)
         {
             perror("Error when waiting for child process to end!");
-            exit(13);
+            exit(errno);
         }
         if(WIFEXITED(status))
         {
